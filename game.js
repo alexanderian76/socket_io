@@ -102,9 +102,19 @@ function sendMove() {
         }));
     }
 }
+
+let lastFrameTime = 0;
+const desiredFPS = 60; // Set your desired frames per second
+const frameInterval = 1000 / desiredFPS; // Calculate the interval in milliseconds
+let currentTime = 0
 // Отрисовка
 function draw() {
-
+    const deltaTime = currentTime - lastFrameTime;
+    currentTime++;
+  if (deltaTime > frameInterval) {
+    lastFrameTime = currentTime - (deltaTime % frameInterval); // Adjust lastFrameTime for accuracy
+    currentTime = 0;
+    lastFrameTime = 0;
     // ctx.beginPath()
     console.log(canvas.width, canvas.height)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -160,8 +170,10 @@ function draw() {
         sendMove();
        // socket.emit('move', { x: myPlayer.x, y: myPlayer.y, direction: myPlayer.direction });
     }
-
+  }
     requestAnimationFrame(draw);
+
+  
 }
 
 draw();

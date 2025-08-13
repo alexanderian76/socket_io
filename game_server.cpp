@@ -27,7 +27,7 @@ struct Player
     double x, y;
     std::string color;
     int radius = 5;
-    double speed = 0.5;
+    double speed = 10.0;
     bool is_alive = true;
     int direction = 0;
     int score = 0;
