@@ -1,0 +1,4 @@
+.vscode/
+node_modules/
+game_server
+a.out

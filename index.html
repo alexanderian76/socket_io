@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Wars - Multiplayer .IO</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; background: #f0f0f0; }
+        #count { position: absolute; top: 10px; left: 10px; font-family: Arial; }
+        #score { position: absolute; top: 30px; left: 10px; font-family: Arial; }
+    </style>
+</head>
+<body>
+    <div id="count">Players Online: <span id="playerCount">0</span></div>
+    <div id="score">Player score: <span id="playerScore">0</span></div>
+    <canvas id="gameCanvas"></canvas>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="./game.js"></script>
+</body>
+</html>
