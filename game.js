@@ -14,7 +14,7 @@ let myPlayer = null;
 // WebSocket event handlers
 ws.onopen = () => {
     console.log('Connected to game server');
-    
+
 };
 
 ws.onclose = () => {
@@ -28,7 +28,7 @@ ws.onerror = (error) => {
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     console.log('Received:', data);
-    
+
     if (data.type === 'init') {
         handleInit(data);
     } else if (data.type === 'newPlayer') {
@@ -111,10 +111,8 @@ let currentTime = 0
 function draw() {
     const deltaTime = currentTime - lastFrameTime;
     currentTime++;
-  if (deltaTime > frameInterval) {
-    lastFrameTime = currentTime - (deltaTime % frameInterval); // Adjust lastFrameTime for accuracy
-    currentTime = 0;
-    lastFrameTime = 0;
+
+
     // ctx.beginPath()
     console.log(canvas.width, canvas.height)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -154,26 +152,30 @@ function draw() {
         console.log(myPlayer)
         switch (myPlayer.direction) {
             case 0:
-                myPlayer.y -= myPlayer.speed;
+                myPlayer.y -= myPlayer.speed / 20;
                 break;
             case 1:
-                myPlayer.y += myPlayer.speed;
+                myPlayer.y += myPlayer.speed / 20;
                 break;
             case 2:
-                myPlayer.x -= myPlayer.speed;
+                myPlayer.x -= myPlayer.speed / 20;
                 break;
             case 3:
-                myPlayer.x += myPlayer.speed;
+                myPlayer.x += myPlayer.speed / 20;
                 break;
         }
         // Отправляем движение на сервер
-        sendMove();
-       // socket.emit('move', { x: myPlayer.x, y: myPlayer.y, direction: myPlayer.direction });
+        if (deltaTime > frameInterval) {
+            lastFrameTime = currentTime - (deltaTime % frameInterval); // Adjust lastFrameTime for accuracy
+            currentTime = 0;
+            lastFrameTime = 0;
+            sendMove();
+            // socket.emit('move', { x: myPlayer.x, y: myPlayer.y, direction: myPlayer.direction });
+        }
     }
-  }
     requestAnimationFrame(draw);
 
-  
+
 }
 
 draw();
