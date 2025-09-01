@@ -2,3 +2,4 @@
 node_modules/
 game_server
 a.out
+io_db.db

@@ -9,7 +9,7 @@
                 "c++20",
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "*.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-l",
@@ -23,7 +23,9 @@
                 "-l",
                 "boost_json",
                 "-l",
-                "pthread"
+                "pthread",
+                "-l",
+                "sqlite3"
             ],
             "options": {
                 "cwd": "${fileDirname}"

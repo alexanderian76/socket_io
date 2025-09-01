@@ -12,6 +12,7 @@
 #include <iostream>
 #include <set>
 #include <boost/assert.hpp>
+#include "db.h"
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -101,9 +102,9 @@ public:
         {
             std::vector<Player> newPlayers;
             Player deletedPlayer;
-            for(int i = 0; i < players_.size(); i++)
+            for (int i = 0; i < players_.size(); i++)
             {
-                if(players_[i].id != id)
+                if (players_[i].id != id)
                     newPlayers.push_back(players_[i]);
                 else
                     deletedPlayer = players_[i];
@@ -131,11 +132,11 @@ public:
         int index = 0;
         for (int i = 0; i < players_.size(); i++)
         {
-            if(players_[i].id == id)
+            if (players_[i].id == id)
                 index = i;
         }
-        Player& it = players_[index];
-        //auto it = foundPlayer;
+        Player &it = players_[index];
+        // auto it = foundPlayer;
         if (!it.is_alive)
         {
             return false;
@@ -158,7 +159,7 @@ public:
 
         if (collision != grid_.end())
         {
-            player.is_alive = false;
+            //    player.is_alive = false;
 
             // Find owner of the collided cell and transfer score
             auto owner = std::find_if(players_.begin(), players_.end(),
@@ -167,13 +168,56 @@ public:
 
             if (owner != players_.end())
             {
-                owner->score += player.score;
+                int tmpScore = owner->score;
+                owner->score -= player.score;
+
+                player.score -= tmpScore;
+            }
+            if (player.score <= 0)
+            {
+                player.is_alive = false;
+            }
+            if (owner->score <= 0)
+            {
+                owner->is_alive = false;
             }
             std::vector<GridCell> newGrid;
-            for (int i = 0; i < grid_.size(); i++)
+            int drawGrid = 0;
+            for (int i = grid_.size() - 1; i >= 0; i--)
             {
-                if (grid_[i].color != player.color)
-                    newGrid.push_back(grid_[i]);
+                if (owner->score <= 0 && player.score <= 0)
+                {
+                    if (grid_[i].color != owner->color && grid_[i].color != player.color)
+                    {
+                        newGrid.push_back(grid_[i]);
+                    }
+                }
+                else if (owner->score <= 0)
+                {
+                    if (grid_[i].color != owner->color)
+                    {
+                        if (player.color == grid_[i].color && drawGrid < player.score)
+                        {
+                            newGrid.push_back(grid_[i]);
+                            drawGrid++;
+                        }
+                        else if (player.color != grid_[i].color)
+                            newGrid.push_back(grid_[i]);
+                    }
+                }
+                else if (player.score <= 0)
+                {
+                    if (grid_[i].color != player.color)
+                    {
+                        if (grid_[i].color == owner->color && drawGrid < owner->score)
+                        {
+                            newGrid.push_back(grid_[i]);
+                            drawGrid++;
+                        }
+                        else if (owner->color != grid_[i].color)
+                            newGrid.push_back(grid_[i]);
+                    }
+                }
             }
             grid_ = newGrid;
             return true;
@@ -237,7 +281,7 @@ public:
 
     ~WebSocketSession()
     {
-     //   remove_session(shared_from_this());
+        //   remove_session(shared_from_this());
     }
 
     void run()
@@ -377,9 +421,9 @@ public:
         std::lock_guard<std::mutex> lock(sessions_mutex_);
         for (auto &session : sessions_)
         {
-            if(session.get()->ws_.is_open())
-            // if(session.get()->id_ != id)
-            session->send(message);
+            if (session.get()->ws_.is_open())
+                // if(session.get()->id_ != id)
+                session->send(message);
         }
     }
 
@@ -401,7 +445,7 @@ public:
                   this->id_);
 
         // Close the WebSocket connection
-        //if(ws_.is_open())
+        // if(ws_.is_open())
         // ws_.close(websocket::close_code::normal);
     }
 };
@@ -455,6 +499,8 @@ int main()
 {
     try
     {
+        DbContext dbContext =  DbContext();
+        dbContext.addRow(11111, 111);
         short port = 3000;
         Server server(port);
         std::cout << "Server running on port " << port << std::endl;

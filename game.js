@@ -116,8 +116,11 @@ function draw() {
     // ctx.beginPath()
     console.log(canvas.width, canvas.height)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     ctx.beginPath();
-    //ctx.fillRect(canvas.width, canvas.height, 0, 0);
+
+    ctx.fillStyle = '#002236ff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     // Рисуем сетку
     grid.forEach(key => {
         // const [x, y] = key.split(',').map(Number);
@@ -132,11 +135,14 @@ function draw() {
         if (player && player.isAlive) {
             ctx.fillStyle = player.color;
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            const img = new Image();
+            img.src = "https://www.clipartmax.com/png/middle/475-4755912_pikachu-pokemon-pok%C3%A9mon-cute-kawaii-pixel-pixelart-pikachu-gen-3-sprite.png"
+            ctx.drawImage(img, player.x - 15, player.y - 10, 25 ,25);
+          //  ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
             ctx.fill();
 
             // Подпись над игроком
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'white';
             ctx.font = '12px Arial';
             ctx.fillText(id.id.slice(0, 5), player.x - 15, player.y - 10);
         }
