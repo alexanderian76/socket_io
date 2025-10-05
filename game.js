@@ -179,7 +179,8 @@ function draw() {
             // socket.emit('move', { x: myPlayer.x, y: myPlayer.y, direction: myPlayer.direction });
         }
     }
-    requestAnimationFrame(draw);
+    if(ws.readyState != WebSocket.CLOSED)
+        requestAnimationFrame(draw);
 
 
 }

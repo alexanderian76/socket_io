@@ -64,8 +64,8 @@ struct GridCell
 
 class GameState
 {
-    std::vector<Player> players_;
-    std::vector<GridCell> grid_;
+    std::vector<Player> *players_ = new std::vector<Player>;
+    std::vector<GridCell> *grid_ = new std::vector<GridCell>;
     std::mutex mutex_;
     std::random_device rd_;
     std::mt19937 gen_;
@@ -82,17 +82,34 @@ public:
     Player add_player(const std::string &id)
     {
         std::uniform_real_distribution<> pos_dist(0.0, 800.0);
-        std::lock_guard<std::mutex> lock(mutex_);
+           std::lock_guard<std::mutex> lock(mutex_);
 
         Player p;
         p.id = id;
         p.x = pos_dist(gen_);
         p.y = pos_dist(gen_);
-        p.color = generate_color();
+        std::string color = generate_color();
+        while (!checkColor(color))
+        {
+            color = generate_color();
+        }
+        p.color = color;
         p.direction = hue_dist_(gen_) % 4;
 
-        players_.push_back(p);
+        players_->push_back(p);
+
+        std::cout << "PLAYER ADDED" << std::endl;
         return p;
+    }
+
+    bool checkColor(std::string color)
+    {
+        for (int i = 0; i < players_->size(); i++)
+        {
+            if (players_->at(i).color == color)
+                return false;
+        }
+        return true;
     }
 
     void remove_player(const std::string id)
@@ -102,22 +119,44 @@ public:
         {
             std::vector<Player> newPlayers;
             Player deletedPlayer;
-            for (int i = 0; i < players_.size(); i++)
+            for (int i = 0; i < players_->size(); i++)
             {
-                if (players_[i].id != id)
-                    newPlayers.push_back(players_[i]);
+                if (players_->at(i).id != id)
+                    newPlayers.push_back(players_->at(i));
                 else
-                    deletedPlayer = players_[i];
+                    deletedPlayer = players_->at(i);
             }
-            players_ = newPlayers;
+
+            // players_.assign(newPlayers->begin(), newPlayers->end());
 
             std::vector<GridCell> newGrid;
-            for (int i = 0; i < grid_.size(); i++)
+            for (int i = 0; i < grid_->size(); i++)
             {
-                if (grid_[i].color != deletedPlayer.color)
-                    newGrid.push_back(grid_[i]);
+                if (grid_->at(i).color != deletedPlayer.color)
+                    newGrid.push_back(grid_->at(i));
             }
-            grid_ = newGrid;
+
+            
+
+            grid_->clear();
+            players_->clear();
+            
+
+            for (int i = 0; i < newGrid.size(); i++)
+            {
+                grid_->push_back(newGrid.at(i));
+            }
+
+            
+
+            for (int i = 0; i < newPlayers.size(); i++)
+            {
+                players_->push_back(newPlayers.at(i));
+            }
+
+            //  grid_.assign(newGrid->begin(), newGrid->end());
+
+            std::cout << "REMOVE SUCCESS" << std::endl;
             //    if(players_.contains(id))
             //   players_.erase(id);
         }
@@ -128,14 +167,14 @@ public:
 
     bool move_player(const std::string id, double x, double y, int direction)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+             std::lock_guard<std::mutex> lock(mutex_);
         int index = 0;
-        for (int i = 0; i < players_.size(); i++)
+        for (int i = 0; i < players_->size(); i++)
         {
-            if (players_[i].id == id)
+            if (players_->at(i).id == id)
                 index = i;
         }
-        Player &it = players_[index];
+        Player &it = players_->at(index);
         // auto it = foundPlayer;
         if (!it.is_alive)
         {
@@ -151,22 +190,22 @@ public:
         int grid_y = static_cast<int>(y / 10) * 10;
 
         // Check for collisions
-        auto collision = std::find_if(grid_.begin(), grid_.end(),
+        auto collision = std::find_if(grid_->begin(), grid_->end(),
                                       [grid_x, grid_y, &player](const GridCell &cell)
                                       {
                                           return cell.grid_x == grid_x && cell.grid_y == grid_y && cell.color != player.color;
                                       });
 
-        if (collision != grid_.end())
+        if (collision != grid_->end())
         {
             //    player.is_alive = false;
 
             // Find owner of the collided cell and transfer score
-            auto owner = std::find_if(players_.begin(), players_.end(),
+            auto owner = std::find_if(players_->begin(), players_->end(),
                                       [&collision](const auto &p)
                                       { return p.color == collision->color; });
 
-            if (owner != players_.end())
+            if (owner != players_->end())
             {
                 int tmpScore = owner->score;
                 owner->score -= player.score;
@@ -183,48 +222,57 @@ public:
             }
             std::vector<GridCell> newGrid;
             int drawGrid = 0;
-            for (int i = grid_.size() - 1; i >= 0; i--)
+            for (int i = grid_->size() - 1; i >= 0; i--)
             {
                 if (owner->score <= 0 && player.score <= 0)
                 {
-                    if (grid_[i].color != owner->color && grid_[i].color != player.color)
+                    if (grid_->at(i).color != owner->color && grid_->at(i).color != player.color)
                     {
-                        newGrid.push_back(grid_[i]);
+                        newGrid.push_back(grid_->at(i));
                     }
                 }
                 else if (owner->score <= 0)
                 {
-                    if (grid_[i].color != owner->color)
+                    if (grid_->at(i).color != owner->color)
                     {
-                        if (player.color == grid_[i].color && drawGrid < player.score)
+                        if (player.color == grid_->at(i).color && drawGrid < player.score)
                         {
-                            newGrid.push_back(grid_[i]);
+                            newGrid.push_back(grid_->at(i));
                             drawGrid++;
                         }
-                        else if (player.color != grid_[i].color)
-                            newGrid.push_back(grid_[i]);
+                        else if (player.color != grid_->at(i).color)
+                            newGrid.push_back(grid_->at(i));
                     }
                 }
                 else if (player.score <= 0)
                 {
-                    if (grid_[i].color != player.color)
+                    if (grid_->at(i).color != player.color)
                     {
-                        if (grid_[i].color == owner->color && drawGrid < owner->score)
+                        if (grid_->at(i).color == owner->color && drawGrid < owner->score)
                         {
-                            newGrid.push_back(grid_[i]);
+                            newGrid.push_back(grid_->at(i));
                             drawGrid++;
                         }
-                        else if (owner->color != grid_[i].color)
-                            newGrid.push_back(grid_[i]);
+                        else if (owner->color != grid_->at(i).color)
+                            newGrid.push_back(grid_->at(i));
                     }
                 }
             }
-            grid_ = newGrid;
+            grid_->clear();
+
+            for (int i = 0; i < newGrid.size(); i++)
+            {
+                grid_->push_back(newGrid.at(i));
+            }
+
+            // grid_.assign(newGrid->begin(), newGrid->end());
+            // delete newGrid;
+            //  grid_ = newGrid;
             return true;
         }
 
         // Add to grid
-        grid_.push_back({grid_x, grid_y, player.color});
+        grid_->push_back({grid_x, grid_y, player.color});
         player.score++;
 
         return false;
@@ -235,13 +283,13 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
 
         json::array players_json;
-        for (const auto &player : players_)
+        for (const auto &player : *players_)
         {
             players_json.push_back(player.to_json());
         }
 
         json::array grid_json;
-        for (const auto &cell : grid_)
+        for (const auto &cell : *grid_)
         {
             grid_json.push_back(cell.to_json());
         }
@@ -281,13 +329,13 @@ public:
 
     ~WebSocketSession()
     {
-        //   remove_session(shared_from_this());
+        remove_session(shared_from_this());
     }
 
     void run()
     {
         {
-            std::lock_guard<std::mutex> lock(sessions_mutex_);
+                std::lock_guard<std::mutex> lock(sessions_mutex_);
             sessions_.insert(shared_from_this());
         }
 
@@ -319,19 +367,25 @@ public:
 
         // Add player to game state
         Player player = game_state_.add_player(id_);
+        try
+        {
+            // Send init message
+            send(json::serialize(json::value{
+                {"type", "init"},
+                {"players", game_state_.get_game_state().at("players")},
+                {"grid", game_state_.get_game_state().at("grid")},
+                {"yourId", id_}}));
 
-        // Send init message
-        send(json::serialize(json::value{
-            {"type", "init"},
-            {"players", game_state_.get_game_state().at("players")},
-            {"grid", game_state_.get_game_state().at("grid")},
-            {"yourId", id_}}));
-
-        // Notify other players
-        broadcast(json::serialize(json::value{
-                      {"type", "newPlayer"},
-                      {"player", player.to_json()}}),
-                  this->id_);
+            // Notify other players
+            broadcast(json::serialize(json::value{
+                          {"type", "newPlayer"},
+                          {"player", player.to_json()}}),
+                      this->id_);
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+        }
 
         do_read();
     }
@@ -347,6 +401,7 @@ public:
 
     void on_read(beast::error_code ec, size_t bytes_transferred)
     {
+        std::cout << "DO READ: " << id_ << std::endl;
         if (ec == websocket::error::closed)
         {
             return handle_disconnect();
@@ -418,18 +473,25 @@ public:
 
     static void broadcast(const std::string &message, std::string id)
     {
-        std::lock_guard<std::mutex> lock(sessions_mutex_);
+          std::lock_guard<std::mutex> lock(sessions_mutex_);
         for (auto &session : sessions_)
         {
-            if (session.get()->ws_.is_open())
-                // if(session.get()->id_ != id)
-                session->send(message);
+            try
+            {
+                if (session.get()->ws_.is_open())
+                    // if(session.get()->id_ != id)
+                    session->send(message);
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
         }
     }
 
     static void remove_session(std::shared_ptr<WebSocketSession> session)
     {
-        std::lock_guard<std::mutex> lock(sessions_mutex_);
+         std::lock_guard<std::mutex> lock(sessions_mutex_);
         sessions_.erase(session);
     }
 
@@ -499,7 +561,7 @@ int main()
 {
     try
     {
-        DbContext dbContext =  DbContext();
+        DbContext dbContext = DbContext();
         dbContext.addRow(11111, 111);
         short port = 3000;
         Server server(port);
