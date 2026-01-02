@@ -522,11 +522,13 @@ class Server
     net::io_context ioc_;
     tcp::acceptor acceptor_;
     GameState game_state_;
+    boost::asio::ip::tcp::endpoint endpoint; 
 
 public:
-    Server(short port)
+    Server(boost::asio::ip::port_type port)
         : ioc_(1),
-          acceptor_(ioc_, {tcp::v4(), port})
+        endpoint(boost::asio::ip::tcp::v4(), port),
+        acceptor_(ioc_, endpoint)
     {
         do_accept();
     }
