@@ -82,7 +82,7 @@ public:
     Player add_player(const std::string &id)
     {
         std::uniform_real_distribution<> pos_dist(0.0, 800.0);
-           std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
 
         Player p;
         p.id = id;
@@ -136,18 +136,13 @@ public:
                     newGrid.push_back(grid_->at(i));
             }
 
-            
-
             grid_->clear();
             players_->clear();
-            
 
             for (int i = 0; i < newGrid.size(); i++)
             {
                 grid_->push_back(newGrid.at(i));
             }
-
-            
 
             for (int i = 0; i < newPlayers.size(); i++)
             {
@@ -167,7 +162,7 @@ public:
 
     bool move_player(const std::string id, double x, double y, int direction)
     {
-             std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::mutex> lock(mutex_);
         int index = 0;
         for (int i = 0; i < players_->size(); i++)
         {
@@ -195,7 +190,7 @@ public:
                                       {
                                           return cell.grid_x == grid_x && cell.grid_y == grid_y && cell.color != player.color;
                                       });
-
+        // collision->grid_x
         if (collision != grid_->end())
         {
             //    player.is_alive = false;
@@ -205,12 +200,31 @@ public:
                                       [&collision](const auto &p)
                                       { return p.color == collision->color; });
 
+            int collisionIndex = -1;
+            for (int j = grid_->size() - 1; j >= 0; j--)
+            {
+                if (grid_->at(j).grid_x == collision->grid_x && grid_->at(j).grid_y == collision->grid_y && grid_->at(j).color == collision->color)
+                    collisionIndex = j;
+            }
+
+
+            int damage = 0;
+            std::cout << "COLLISION: " << collisionIndex << std::endl;
+            if (collisionIndex >= 0)
+            {
+                for (int j = collisionIndex; j >= 0; j--)
+                {
+                    if (grid_->at(j).color == collision->color)
+                        damage++;
+                }
+            }
+            std::cout << "DAMAGE: " << damage << std::endl;
             if (owner != players_->end())
             {
-                int tmpScore = owner->score;
-                owner->score -= player.score;
+                // int tmpScore = owner->score;
+                owner->score -= damage; // player.score;
 
-                player.score -= tmpScore;
+                player.score -= damage; // tmpScore;
             }
             if (player.score <= 0)
             {
@@ -222,6 +236,8 @@ public:
             }
             std::vector<GridCell> newGrid;
             int drawGrid = 0;
+            int damagedScorePlayer = player.score;
+            int damagedScoreOwner = owner->score;
             for (int i = grid_->size() - 1; i >= 0; i--)
             {
                 if (owner->score <= 0 && player.score <= 0)
@@ -257,10 +273,27 @@ public:
                             newGrid.push_back(grid_->at(i));
                     }
                 }
+                else
+                {
+                    if (grid_->at(i).color == owner->color && damagedScoreOwner > 0)
+                    {
+                        newGrid.push_back(grid_->at(i));
+                        damagedScoreOwner--;
+                    }
+                    else if (grid_->at(i).color == player.color && damagedScorePlayer > 0)
+                    {
+                        newGrid.push_back(grid_->at(i));
+                        damagedScorePlayer--;
+                    }
+                    else if(owner->color != grid_->at(i).color && player.color != grid_->at(i).color)
+                    {
+                        newGrid.push_back(grid_->at(i));
+                    }
+                }
             }
             grid_->clear();
 
-            for (int i = 0; i < newGrid.size(); i++)
+            for (int i = newGrid.size() - 1; i >= 0 ; i--)
             {
                 grid_->push_back(newGrid.at(i));
             }
@@ -335,7 +368,7 @@ public:
     void run()
     {
         {
-                std::lock_guard<std::mutex> lock(sessions_mutex_);
+            std::lock_guard<std::mutex> lock(sessions_mutex_);
             sessions_.insert(shared_from_this());
         }
 
@@ -473,7 +506,7 @@ public:
 
     static void broadcast(const std::string &message, std::string id)
     {
-          std::lock_guard<std::mutex> lock(sessions_mutex_);
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
         for (auto &session : sessions_)
         {
             try
@@ -491,7 +524,7 @@ public:
 
     static void remove_session(std::shared_ptr<WebSocketSession> session)
     {
-         std::lock_guard<std::mutex> lock(sessions_mutex_);
+        std::lock_guard<std::mutex> lock(sessions_mutex_);
         sessions_.erase(session);
     }
 
@@ -524,7 +557,7 @@ class Server
     GameState game_state_;
 
 public:
-    Server(short port)
+    Server(unsigned short port)
         : ioc_(1),
           acceptor_(ioc_, {tcp::v4(), port})
     {
