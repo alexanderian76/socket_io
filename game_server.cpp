@@ -207,7 +207,6 @@ public:
                     collisionIndex = j;
             }
 
-
             int damage = 0;
             std::cout << "COLLISION: " << collisionIndex << std::endl;
             if (collisionIndex >= 0)
@@ -285,7 +284,7 @@ public:
                         newGrid.push_back(grid_->at(i));
                         damagedScorePlayer--;
                     }
-                    else if(owner->color != grid_->at(i).color && player.color != grid_->at(i).color)
+                    else if (owner->color != grid_->at(i).color && player.color != grid_->at(i).color)
                     {
                         newGrid.push_back(grid_->at(i));
                     }
@@ -293,7 +292,7 @@ public:
             }
             grid_->clear();
 
-            for (int i = newGrid.size() - 1; i >= 0 ; i--)
+            for (int i = newGrid.size() - 1; i >= 0; i--)
             {
                 grid_->push_back(newGrid.at(i));
             }
@@ -555,14 +554,18 @@ class Server
     net::io_context ioc_;
     tcp::acceptor acceptor_;
     GameState game_state_;
-    boost::asio::ip::tcp::endpoint endpoint; 
+    boost::asio::ip::tcp::endpoint endpoint;
 
 public:
     Server(boost::asio::ip::port_type port)
         : ioc_(1),
-        endpoint(boost::asio::ip::tcp::v4(), port),
-        acceptor_(ioc_, endpoint)
+          endpoint(boost::asio::ip::tcp::v4(), port),
+          acceptor_(ioc_)
     {
+        acceptor_.open(endpoint.protocol());
+        acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+        acceptor_.bind(endpoint);
+        acceptor_.listen();
         do_accept();
     }
 
