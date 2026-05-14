@@ -557,9 +557,9 @@ class Server
     boost::asio::ip::tcp::endpoint endpoint;
 
 public:
-    Server(boost::asio::ip::port_type port)
+    Server(boost::asio::ip::port_type port_num)
         : ioc_(1),
-          endpoint(boost::asio::ip::tcp::v4(), port),
+          endpoint(boost::asio::ip::tcp::v4(), port_num),
           acceptor_(ioc_)
     {
         acceptor_.open(endpoint.protocol());
@@ -601,7 +601,7 @@ int main()
     {
         DbContext dbContext = DbContext();
         dbContext.addRow(11111, 111);
-        short port = 3000;
+        boost::asio::ip::port_type port = 3000;
         Server server(port);
         std::cout << "Server running on port " << port << std::endl;
         server.run();
